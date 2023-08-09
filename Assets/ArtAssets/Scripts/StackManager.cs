@@ -6,132 +6,276 @@ using UnityEngine;
 
 public class StackManager: MonoBehaviour {
     //ı
-    [SerializeField] GameObject stackPrefab;
+    [SerializeField] Transform stackPrefab;
     [SerializeField] Transform player;
     [SerializeField] float stackMovementSpeed = 2;
     [SerializeField] float offset = 1;
-    GameObject currentStack;
-    Transform oldStack; 
-    Transform oldStack2;
-    float stackHeight;
-    float starterPosition;
+    [SerializeField] float tolerance = .3f;
+
+    Transform currentlyMovingStack;
+    Transform lastStandingStack;
+    Transform previousStandingStack;
+
+    float newStackPosition;
     float limitIncreasement;
     bool directionChanger;
-    public enum Direction {
-        Left,
-        Right,
-        Front,
-        Back
-    }
-    private void Start()
+    private bool spawnStop;
+    float firstStackPos;
+    
+    
+    public void SetFirstStackPos()
     {
-        stackHeight = stackPrefab.transform.localScale.z;
-        int positiveZStackCount = (transform.childCount - 4);
-        starterPosition = positiveZStackCount * stackHeight;
-        currentStack = transform.GetChild(transform.childCount - 1).gameObject;
-        currentStack = transform.GetChild(transform.childCount - 1).gameObject;
-        SpawnStack(true);
+        firstStackPos = transform.GetChild(0).position.z;
+
+    }
+
+
+
+    //void SpawnNewStack()
+    //{
+
+    //}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public void InitializeStackSpawner(float lastReferenceObjectPos)
+    {
+
+        newStackPosition = lastReferenceObjectPos;
+
+        currentlyMovingStack = transform.GetChild(transform.childCount - 1);
     }
     private void Update()
     {
-        MoveStackBetweenTheLimits();
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(spawnStop)
         {
-            SpawnStack();
+            return;
+        }
+        MoveStackBetweenTheLimits();
+        if(Input.GetMouseButtonDown(0))
+        {
+            SpawnNewStack();
         }
     }
 
     private void MoveStackBetweenTheLimits()
     {
+
         int direction = 1;
         if(directionChanger)
         {
 
-            if(limitIncreasement >= stackHeight + offset)
+            if(limitIncreasement >= GetStackHeight() + offset)
             {
                 directionChanger = false;
             }
         } else
         {
             direction *= -1;
-            if(limitIncreasement <= -stackHeight - offset)
+            if(limitIncreasement <= -GetStackHeight() - offset)
             {
                 directionChanger = true;
             }
         }
         limitIncreasement += Time.deltaTime * direction * stackMovementSpeed;
 
-        currentStack.transform.position = new Vector3(limitIncreasement, currentStack.transform.position.y, currentStack.transform.position.z);
+        currentlyMovingStack.transform.position = new Vector3(limitIncreasement, currentlyMovingStack.transform.position.y, currentlyMovingStack.transform.position.z);
     }
 
-    void SpawnStack(bool isFirstSpawn = false)
-    { 
-        oldStack2 = oldStack ;
-        oldStack = currentStack.transform;
-        currentStack = transform.GetChild(0).gameObject;
-        currentStack.transform.SetAsLastSibling();
-         DivideObject(isFirstSpawn);
-        starterPosition += stackHeight;
-    }
-    private void DivideObject(bool isFirstSpawn  )
+    void SpawnNewStack()
     {
-    
-        float value =Mathf.Abs(oldStack.transform.position.x- currentStack.transform.position.x);
-        float xValue = oldStack.transform.localScale.x - value;
-        if(xValue <= 0)
-        {
-            xValue = .1f;
-            print("done");
-        }
-        oldStack.transform.localScale = new Vector3(xValue, oldStack.transform.localScale.y, oldStack.transform.localScale.z);
-        
-        float old2x = 0;
-        if(!isFirstSpawn)
-        {
-            if(oldStack2.transform.position.x > oldStack.transform.position.x)
-            {
-                old2x = oldStack2.transform.position.x - (oldStack2.transform.localScale.x / 2); 
-            } else
-            {
-                old2x = oldStack2.transform.position.x + (oldStack2.transform.localScale.x / 2); 
+        previousStandingStack = lastStandingStack;
 
-            }
-            print(old2x);
-            float lastResult = 0;
-            if(old2x<0)
-            {
-                lastResult = old2x + (oldStack.localScale.x / 2);
-            } else
-            {
-                lastResult = old2x - (oldStack.localScale.x / 2);
+        lastStandingStack = currentlyMovingStack.transform;
+        lastStandingStack.GetComponent<BoxCollider>().enabled = true;
 
-            }
-            oldStack.transform.position = new Vector3(lastResult, oldStack.transform.position.y, oldStack.transform.position.z);
+        currentlyMovingStack = transform.GetChild(0);
+        currentlyMovingStack.transform.SetAsLastSibling();
+
+        float wastedArea = GetWastedAreaWithTolerance();
+        if(CheckIfFail(wastedArea))
+        {
+            SetGameOver();
+            spawnStop = true;
+            return;
         }
-        //if(!isFirstSpawn)
-        //{
-        //    oldStack.transform.position = new Vector3(oldPos.x, oldStack.transform.position.y, oldStack.transform.position.z);
-        //}
-        currentStack.transform.localScale = oldStack.transform.localScale;
-        currentStack.transform.position = new Vector3(0, -.5f, starterPosition);
-        
+
+        DivideObject(wastedArea);
+
+        if(CheckIfStackArrivedToFinish())
+        {
+            spawnStop = true;
+        }
+        GenerateNewCurrentStack();
+        newStackPosition += GetStackHeight();
     }
 
-    private Vector3 GetPositionEdge(MeshRenderer mesh )
-    {
-        Vector3 extents = mesh.bounds.extents;
-        Vector3 position = mesh.transform.position;
-        if(directionChanger)
-        {
-                position.x += extents.x;
 
+
+  public  void SpawnNewStack(bool isInitalizerSpawn)
+    {
+        previousStandingStack = lastStandingStack;
+        lastStandingStack = currentlyMovingStack.transform;
+        lastStandingStack.GetComponent<BoxCollider>().enabled = true;
+        currentlyMovingStack = transform.GetChild(0);
+        currentlyMovingStack.transform.SetAsLastSibling();
+        GenerateNewCurrentStack(isInitalizerSpawn);
+        newStackPosition += GetStackHeight();
+    }
+    private bool CheckIfStackArrivedToFinish()
+    {
+        Transform finishTarget = GameManager.instance.GetFinishTarget();
+        if(previousStandingStack.position.z >= (finishTarget.position.z - GetStackHeight() - finishTarget.localScale.z * 2.5f))
+        {
+            return true;
+        }
+        return false;
+    }
+    private void DivideObject(float wastedArea)
+    {
+        SetStandingPieceScale(wastedArea);
+        float fallingPieceAlignPosition = GetFallingPieceAlignPosition();
+        SetStandingPieceAlignPosition(fallingPieceAlignPosition);
+        GenerateFallingPiece(positionX: fallingPieceAlignPosition, scaleX: wastedArea);
+    }
+
+    private void GenerateNewCurrentStack(bool isInitalizerSpawn = false)
+    {
+        Vector3 scale = isInitalizerSpawn ? stackPrefab.localScale : lastStandingStack.transform.localScale;
+        currentlyMovingStack.transform.localScale = scale;
+        if(!spawnStop)
+        {
+            currentlyMovingStack.transform.position = new Vector3(0, -.5f, newStackPosition);
+        }
+        currentlyMovingStack.GetComponent<BoxCollider>().enabled = false;
+
+    }
+
+    private float GetFallingPieceAlignPosition()
+    {
+        float fallingPieceAlignPosition = 0;
+        bool alignPositionIsRight = previousStandingStack.transform.position.x > lastStandingStack.transform.position.x;
+
+        if(alignPositionIsRight)
+        {
+            fallingPieceAlignPosition = previousStandingStack.transform.position.x - (previousStandingStack.transform.localScale.x / 2);
         } else
         {
+            fallingPieceAlignPosition = previousStandingStack.transform.position.x + (previousStandingStack.transform.localScale.x / 2);
 
-                position.x += -extents.x;
         }
-         
+        return fallingPieceAlignPosition;
+    }
 
-        return position;
+
+    private void SetStandingPieceScale(float wastedArea)
+    {
+        float standingStackScaleX = lastStandingStack.transform.localScale.x - wastedArea;
+        lastStandingStack.transform.localScale = new Vector3(standingStackScaleX, lastStandingStack.transform.localScale.y, lastStandingStack.transform.localScale.z);
+    }
+
+    private void SetGameOver()
+    {
+        EventsManager.onGameFinished?.Invoke(false);
+    }
+
+    private bool CheckIfFail(float wasterArea)
+    {
+        return (lastStandingStack.transform.localScale.x - wasterArea) <= 0;
+    }
+
+    private float GetWastedAreaWithTolerance()
+    {
+        float wastedArea = Mathf.Abs(lastStandingStack.transform.position.x - currentlyMovingStack.transform.position.x);
+        if(wastedArea < tolerance)
+        {
+            wastedArea = 0;
+        }
+        return wastedArea;
+    }
+
+    private void SetStandingPieceAlignPosition(float fallingPieceAlignPosition)
+    {
+        float standingPieceAlignPosition;
+        if(fallingPieceAlignPosition < 0)
+        {
+            standingPieceAlignPosition = fallingPieceAlignPosition + (lastStandingStack.localScale.x / 2);
+        } else
+        {
+            standingPieceAlignPosition = fallingPieceAlignPosition - (lastStandingStack.localScale.x / 2);
+
+        }
+        lastStandingStack.transform.position = new Vector3(standingPieceAlignPosition, lastStandingStack.transform.position.y, lastStandingStack.transform.position.z);
+    }
+    private void GenerateFallingPiece(float positionX, float scaleX)
+    {
+        if(scaleX == 0)
+        {
+            return;
+        }
+        GameObject fallingPiece = Instantiate(stackPrefab.gameObject, new Vector3(positionX, lastStandingStack.transform.position.y, lastStandingStack.transform.position.z), Quaternion.identity);
+        fallingPiece.AddComponent<Rigidbody>();
+        fallingPiece.transform.localScale = new Vector3(scaleX, lastStandingStack.localScale.y, lastStandingStack.localScale.z);
+        Destroy(fallingPiece, 5);
+
+    }
+    public Transform GetNewPassedStack()
+    {
+        if(lastStandingStack == null)
+        {
+            return transform.GetChild(transform.childCount - 2);
+
+        }
+        return lastStandingStack;
+    }
+    public float GetStackHeight()
+    {
+        return stackPrefab.localScale.z;
+    }
+    public Vector3 GetStackScale()
+    {
+        return stackPrefab.localScale;
+    }
+
+    public float GetForemostPosition()
+    {
+        return transform.GetChild(transform.childCount - 1).position.z + GetStackHeight();
+    }
+
+    public void ReloadNextLevel()
+    {
+        spawnStop = false;
+        for(int i = 0; i < 3; i++)
+        {
+            SpawnNewStack(true);
+        }
+
+    }
+
+    internal void ResetStacks()
+    {
+        print(firstStackPos);
+        for(int i = 0; i < transform.childCount; i++)
+        {
+            Transform stack = transform.GetChild(i); 
+            stack.position = new Vector3(0, -.5f, firstStackPos + (i * GetStackHeight()));
+            stack.localScale = stackPrefab.localScale;
+        } 
+         currentlyMovingStack =null; 
+         lastStandingStack  = null;
+        previousStandingStack = null;
+        spawnStop = false; 
     }
 }
