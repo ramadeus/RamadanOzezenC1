@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class StackManager: MonoBehaviour {
     //ı
+    #region Variables
     [SerializeField] StarterRoadAnimator starterRoadAnimator;
     [SerializeField] StackDivider stackDivider;
     [SerializeField] Transform stackPrefab;
@@ -13,7 +14,9 @@ public class StackManager: MonoBehaviour {
     [SerializeField] float stackMovementSpeed = 2;
     [SerializeField] float offset = 1;
     [SerializeField] float tolerance = .3f;
+    #endregion 
 
+    #region PrivateVariables 
     ObjectPooler objectPooler;
     Transform currentlyMovingStack;
     Transform lastStandingStack;
@@ -24,27 +27,39 @@ public class StackManager: MonoBehaviour {
     bool spawnStop = true;
     bool directionChanger;
     bool stopSpawnAtNext;
+    #endregion 
 
-
+    #region Initialize
     private void OnEnable()
     {
         objectPooler = ObjectPooler.Instance;
         EventsManager.onObjectSpawn += InitializeSpawnHistory;
         EventsManager.onInitializeGame += OnInitializeTheGame;
         EventsManager.onGameStart += OnGameStart;
+        EventsManager.onGameFinished += OnGameFinished;
         EventsManager.onFinishLineZChanged += OnFinishLineZChanged;
     }
+
+
+
     private void OnDisable()
     {
         EventsManager.onObjectSpawn -= InitializeSpawnHistory;
         EventsManager.onInitializeGame -= OnInitializeTheGame;
+        EventsManager.onGameFinished -= OnGameFinished;
         EventsManager.onGameStart -= OnGameStart;
         EventsManager.onFinishLineZChanged -= OnFinishLineZChanged;
     }
     private void OnGameStart()
     {
         objectPooler.SpawnFromPool("Stack", GetStackSpawnPosition(), Quaternion.identity, stackPrefab.localScale);
+        currentlyMovingStack.GetComponent<BoxCollider>().enabled = false;
+
         spawnStop = false;
+    }
+    private void OnGameFinished(bool obj)
+    {
+        spawnStop = true;
     }
 
     private void OnInitializeTheGame(bool isFirstLevel)
@@ -58,17 +73,20 @@ public class StackManager: MonoBehaviour {
         }
         stopSpawnAtNext = false;
     }
+
+    // Every stack placing process changes the order of the current,last and previous stack holders.
     private void InitializeSpawnHistory(int id)
     {
         GameObject newSpawnedObject = objectPooler.GetPoolObject("Stack", id);
         previousStandingStack = lastStandingStack;
         lastStandingStack = currentlyMovingStack;
-        if(lastStandingStack != null)
-        {
-            EventsManager.onLastStandingXChanged?.Invoke(lastStandingStack.position.x);
-        }
+       
         currentlyMovingStack = newSpawnedObject.transform;
+
     }
+    #endregion
+
+    #region LifeCycle
     private void Update()
     {
         if(spawnStop)
@@ -80,10 +98,10 @@ public class StackManager: MonoBehaviour {
 
         if(Input.GetMouseButtonDown(0))
         {
-            SpawnNewStack();
+            InitializeNewStack();
         }
-    } 
-
+    }
+     
     private void MoveStackBetweenTheLimits()
     {
         int direction = 1;
@@ -105,17 +123,26 @@ public class StackManager: MonoBehaviour {
 
         currentlyMovingStack.transform.position = new Vector3(limitIncreasement, currentlyMovingStack.transform.position.y, currentlyMovingStack.transform.position.z);
     }
+    #endregion
 
-    void SpawnNewStack()
+    #region SpawnArea
+    /// <summary>
+    /// Initialize new spawn
+    /// Checks if new spawn has failed
+    /// Checks if has combo
+    /// Checks if it's the last one before finish
+    /// Generates new scale
+    /// </summary>
+    void InitializeNewStack()
     {
+
+        GameObject spawnedObject =SpawnNewStack();
         if(stopSpawnAtNext)
         {
-            currentlyMovingStack.GetComponent<BoxCollider>().enabled = true;
             spawnStop = true;
-            return;
-        }
+            spawnedObject.SetActive(false);
 
-        objectPooler.SpawnFromPool("Stack", GetStackSpawnPosition(), Quaternion.identity, stackPrefab.localScale);
+        }
 
         lastStandingStack.GetComponent<BoxCollider>().enabled = true;
 
@@ -130,31 +157,41 @@ public class StackManager: MonoBehaviour {
         if(CheckIfStackArrivedToFinish())
         {
             stopSpawnAtNext = true;
+            EventsManager.onLastStackSpawn?.Invoke();
         }
 
         stackDivider.GenerateStackHistory(previousStandingStack, lastStandingStack);
         stackDivider.DivideObject(wastedArea);
         ScaleNewCurrentStack();
+
+
     }
 
+    private GameObject SpawnNewStack()
+    {
+        return objectPooler.SpawnFromPool("Stack", GetStackSpawnPosition(), Quaternion.identity, stackPrefab.localScale);
+    }
+    private float GetWastedAreaWithTolerance()
+    {
+        float wastedArea = Mathf.Abs(lastStandingStack.transform.position.x - currentlyMovingStack.transform.position.x); 
+        if(wastedArea < tolerance)
+        {
+            wastedArea = 0;
+        }
+
+        return wastedArea;
+    }
     private void TryCombo(bool isSuccessful)
     {
         EventsManager.onComboTry?.Invoke(isSuccessful);
     }
-
-    Vector3 GetStackSpawnPosition()
+    private bool CheckIfFail(float wasterArea)
     {
-        float targetZ = currentlyMovingStack.position.z + stackPrefab.localScale.z;
-        Vector3 targetPos = new Vector3(lastStandingStack.position.x, lastStandingStack.position.y, targetZ);
-        return targetPos;
+        return (lastStandingStack.transform.localScale.x - wasterArea) <= 0;
     }
-    private void ScaleNewCurrentStack(bool isInitalizerSpawn = false)
+    private void SetGameOver()
     {
-        Vector3 scale = isInitalizerSpawn ? stackPrefab.localScale : lastStandingStack.transform.localScale;
-        currentlyMovingStack.transform.localScale = scale;
-
-        currentlyMovingStack.GetComponent<BoxCollider>().enabled = false;
-
+        EventsManager.onGameFinished?.Invoke(false);
     }
 
     private bool CheckIfStackArrivedToFinish()
@@ -166,32 +203,25 @@ public class StackManager: MonoBehaviour {
         }
         return false;
     }
-
-    private void SetGameOver()
+    private void ScaleNewCurrentStack(bool isInitalizerSpawn = false)
     {
-        EventsManager.onGameFinished?.Invoke(false);
-    }
-
-    private bool CheckIfFail(float wasterArea)
-    {
-        return (lastStandingStack.transform.localScale.x - wasterArea) <= 0;
-    }
-    private void OnFinishLineZChanged(float z)
-    {
-        currentFinishTargetZ = z;
-    }
-
-    private float GetWastedAreaWithTolerance()
-    {
-        float wastedArea = Mathf.Abs(lastStandingStack.transform.position.x - currentlyMovingStack.transform.position.x);
-       
-        if(wastedArea < tolerance)
+        Vector3 scale = isInitalizerSpawn ? stackPrefab.localScale : lastStandingStack.transform.localScale;
+        currentlyMovingStack.transform.localScale = scale;
+        if(lastStandingStack != null)
         {
-            wastedArea = 0; 
+            EventsManager.onLastStandingXChanged?.Invoke(lastStandingStack.position.x);
         }
-        
-        return wastedArea;
-    } 
+
+    }
+    #endregion
+
+    #region Getters
+    Vector3 GetStackSpawnPosition()
+    {
+        float targetZ = currentlyMovingStack.position.z + stackPrefab.localScale.z;
+        Vector3 targetPos = new Vector3(lastStandingStack.position.x, lastStandingStack.position.y, targetZ);
+        return targetPos;
+    }
     public float GetStackHeight()
     {
         return stackPrefab.localScale.z;
@@ -200,5 +230,18 @@ public class StackManager: MonoBehaviour {
     {
         return currentFinishTargetZ + 2.5f;
     }
+    #endregion 
+
+    #region Helpers
+    private void OnFinishLineZChanged(float z)
+    {
+        currentFinishTargetZ = z;
+    }
+
+    #endregion
+
+
+
+  
 
 }

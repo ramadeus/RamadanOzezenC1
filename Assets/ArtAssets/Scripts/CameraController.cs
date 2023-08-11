@@ -29,6 +29,17 @@ public class CameraController: MonoBehaviour {
 
     }
 
+    // switch the following process to look at process   
+    private void OnGameFinished(bool isWin)
+    {
+        cam.Follow = null;
+        if(isWin)
+        {
+            cam.LookAt = playerPos;
+            DanceCam(); 
+        }
+    }
+    // switch back the look at process to following process   
     private void OnInitializeGame(bool obj)
     {
         transform.parent = null;
@@ -37,27 +48,13 @@ public class CameraController: MonoBehaviour {
             Destroy(rotateOrigin);
             rotateOrigin = null;
         }
-        cam.LookAt = null; 
-            cam.Follow = playerPos;
+        cam.LookAt = null;
+        cam.Follow = playerPos;
         transform.DORotateQuaternion(startRot, 1f);
     }
-
-    private void OnGameFinished(bool isWin)
-    {
-        if(isWin)
-        {
-            cam.Follow = null;
-                    cam.LookAt = playerPos;
-      DanceCam();
-            //cam.transform.DOLookAt(playerPos.position, .5f)
-            //    .OnComplete(() =>
-            //    {
-
-            //  
-            //    });
-
-        }
-    }
+    /// <summary>
+    /// create an empty object to the player's position and make the cam child of it so it is the new origin of camera, then rotate the origin, so rotate the camera
+    /// </summary>
     private void DanceCam()
     {
         rotateOrigin = new GameObject("CamOrigin");

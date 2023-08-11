@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,10 +8,12 @@ public class CollectibleSpawner: MonoBehaviour {
     //ı
     [SerializeField] int spawnRatio = 3;
     int ignoreFirstThree;
+    bool lastSpawn;
     private void OnEnable()
     {
         EventsManager.onObjectSpawn += GenerateCollectible;
-        EventsManager.onInitializeGame += Initialize;
+        EventsManager.onGameStart += OnGameStart;
+        EventsManager.onLastStackSpawn += OnLastStackSpawn;
     }
 
 
@@ -18,16 +21,28 @@ public class CollectibleSpawner: MonoBehaviour {
     private void OnDisable()
     {
         EventsManager.onObjectSpawn -= GenerateCollectible;
-        EventsManager.onInitializeGame -= Initialize;
+        EventsManager.onLastStackSpawn -= OnLastStackSpawn;
+        EventsManager.onGameStart-= OnGameStart;
     }
-    private void Initialize(bool obj)
+
+    private void OnLastStackSpawn()
+    {
+        lastSpawn = true;
+    }
+
+    private void OnGameStart ()
     {
         ignoreFirstThree = 0;
+        lastSpawn = false;
     }
 
     private void GenerateCollectible(int stackId)
     {
-        if(ignoreFirstThree<3)
+        if(lastSpawn)
+        {
+            return;
+        }
+        if(ignoreFirstThree < 3)
         {
             ignoreFirstThree++;
             return;
@@ -61,30 +76,50 @@ public class CollectibleSpawner: MonoBehaviour {
 
     private void SpawnStar(int stackId)
     {
-        Transform responsibleStack = ObjectPooler.Instance.GetPoolObject("Stack", stackId).transform;
-        Vector3 spawnPos = new Vector3(responsibleStack.position.x, 0, responsibleStack.position.z);
-        ObjectPooler.Instance.SpawnFromPool("Star", spawnPos, Quaternion.identity);
+        Transform responsibleStack = ObjectPooler.Instance.GetPoolObject("Stack", stackId).transform; 
+
+        float direction = UnityEngine.Random.Range(0, 1) == 0 ? 1 : -1;
+
+        Vector3 targetPos = new Vector3(responsibleStack.position.x, 0, responsibleStack.position.z);
+        Vector3 spawnPos = new Vector3(targetPos.x + (direction * 7), targetPos.y + 7, targetPos.z);
+
+        GameObject spawnedObject = ObjectPooler.Instance.SpawnFromPool("Star", spawnPos, Quaternion.identity);
+         
+        spawnedObject.transform.DOMove(targetPos, 1); 
     }
 
     private void SpawnDiamond(int stackId)
     {
         Transform responsibleStack = ObjectPooler.Instance.GetPoolObject("Stack", stackId).transform;
         float randomLocator = UnityEngine.Random.Range(0f, responsibleStack.localScale.z);
-        float targetZ = (responsibleStack.position.z - responsibleStack.localScale.z / 2) + randomLocator;
-        Vector3 spawnPos = new Vector3(responsibleStack.position.x, 0, targetZ);
-        ObjectPooler.Instance.SpawnFromPool("Diamond", spawnPos, Quaternion.identity);
+        float targetZ = (responsibleStack.position.z - responsibleStack.localScale.z / 2) + randomLocator; 
+        float direction = UnityEngine.Random.Range(0, 1) == 0 ? 1 : -1;
+
+        Vector3 targetPos = new Vector3(responsibleStack.position.x, 0, targetZ);
+        Vector3 spawnPos = new Vector3(targetPos.x + (direction * 7), targetPos.y + 7, targetPos.z);
+
+        GameObject spawnedObject = ObjectPooler.Instance.SpawnFromPool("Diamond", spawnPos, Quaternion.identity);
+         
+        spawnedObject.transform.DOMove(targetPos, 1);
     }
 
     private void SpawnCoin(int stackId)
     {
-        Transform responsibleStack = ObjectPooler.Instance.GetPoolObject("Stack", stackId).transform;
+        Transform responsibleStack = ObjectPooler.Instance.GetPoolObject("Stack", stackId).transform; 
+
+        float direction = UnityEngine.Random.Range(0, 1) == 0 ? 1 : -1; 
         int randomSpawnCount = UnityEngine.Random.Range(1, 6);
         float distanceBetweenCoins = responsibleStack.localScale.z / randomSpawnCount;
+
         for(int i = 0; i < randomSpawnCount; i++)
         {
             float targetZ = (responsibleStack.position.z - responsibleStack.localScale.z / 2) + (i * distanceBetweenCoins);
-            Vector3 spawnPos = new Vector3(responsibleStack.position.x, 0, targetZ);
-            ObjectPooler.Instance.SpawnFromPool("Coin", spawnPos, Quaternion.identity);
+
+            Vector3 targetPos = new Vector3(responsibleStack.position.x, 0, targetZ);
+            Vector3 spawnPos = new Vector3(targetPos.x + (direction * 7), targetPos.y + 7, targetPos.z);
+
+            GameObject spawnedObject = ObjectPooler.Instance.SpawnFromPool("Coin", spawnPos, Quaternion.identity); 
+            spawnedObject.transform.DOMove(targetPos, 1);
         }
     }
 }

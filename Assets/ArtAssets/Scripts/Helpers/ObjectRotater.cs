@@ -7,10 +7,8 @@ public class ObjectRotater : MonoBehaviour
     //ı
         float spinSpeed  = 30;
     private void Update()
-    {
-
-        
-            transform.Rotate(0, spinSpeed * Time.deltaTime, 0);
-        
+    { 
+        // to rotate origin while dancing
+            transform.Rotate(0, spinSpeed * Time.deltaTime, 0); 
     }
 }

@@ -9,8 +9,7 @@ public   class PooledObject : MonoBehaviour
     public virtual  void OnObjectSpawn()
     {
         EventsManager.onObjectSpawn?.Invoke(stackId);
-    }
-
+    } 
     public   void InitializeId(int id)
     { 
         stackId = id;

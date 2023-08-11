@@ -12,6 +12,7 @@ public class StarterRoadAnimator: MonoBehaviour {
         objectPooler = ObjectPooler.Instance;
   
     }
+    // generates a far spawn positions to animate stacks to the center 
     public void SpawnFirstRoadWithAnim(int roadCount, float firstZpos)
     {
         for(int i = 0; i < roadCount; i++)

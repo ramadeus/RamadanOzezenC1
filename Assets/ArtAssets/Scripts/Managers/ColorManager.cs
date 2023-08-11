@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ColorManager : MonoBehaviour
-{
-    //ı
+public class ColorManager: MonoBehaviour {
+    //ı 
     [SerializeField] Material[] materials;
     int index;
     private void OnEnable()
@@ -18,7 +17,7 @@ public class ColorManager : MonoBehaviour
     }
     private void ChangeColor(int stackId)
     {
-       GameObject spawnedObject = ObjectPooler.Instance.GetPoolObject("Stack", stackId);
+        GameObject spawnedObject = ObjectPooler.Instance.GetPoolObject("Stack", stackId);
         MeshRenderer mesh = spawnedObject.GetComponent<MeshRenderer>();
         mesh.material = materials[index];
         GenerateIndex();

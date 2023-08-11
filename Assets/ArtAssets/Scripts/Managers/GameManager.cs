@@ -28,10 +28,10 @@ public class GameManager: MonoBehaviour {
     private IEnumerator StartTheGame(float timer, bool isFirstLevel)
     {
         yield return new WaitForSeconds(timer);
-        InitializeFinishTarget(isFirstLevel);
+        InitializeFinishLineTarget(isFirstLevel);
         EventsManager.onGameStart?.Invoke();
     }
-    private void InitializeFinishTarget(bool isFirstLevel)
+    private void InitializeFinishLineTarget(bool isFirstLevel)
     {
         float lastFinishTargetZ = 0;
         float scaleMultiplier = 2.5f;

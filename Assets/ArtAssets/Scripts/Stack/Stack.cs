@@ -7,5 +7,5 @@ public class Stack : PooledObject
     //ı
 
    
-    
+    // can write some code in the future
 }

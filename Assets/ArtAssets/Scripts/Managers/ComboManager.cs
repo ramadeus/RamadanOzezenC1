@@ -25,7 +25,7 @@ public class ComboManager: MonoBehaviour {
 
     private void OnInitializeGame(bool obj)
     {
-        comboCounter = 0; 
+        comboCounter = 0;
     }
 
 
@@ -47,16 +47,18 @@ public class ComboManager: MonoBehaviour {
         {
             AudioManager.Instance.PlaySFX("ComboNote", noComboNote);
             comboCounter = 0;
-        }
-        print(comboCounter);
+        } 
     }
+    /// <summary>
+    /// Gets last placed stack and makes effect by generating random spawn position over placed stack.
+    /// </summary>
     private void ComboEffect()
     {
         GameObject stack = ObjectPooler.Instance.GetPoolObject("Stack", lastStandingStackId);
         for(int i = 0; i < 4; i++)
         {
             GameObject particle = SpawnParticle("CoinParticle", stack);
-            StartCoroutine(DeactivateParticle(particle)); 
+            StartCoroutine(DeactivateParticle(particle));
         }
     }
     GameObject SpawnParticle(string particleKey, GameObject stack)

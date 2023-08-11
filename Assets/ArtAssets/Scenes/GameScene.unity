@@ -4960,7 +4960,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 1018567615}
-  rotateSpeed: 0
 --- !u!1 &1025820932
 GameObject:
   m_ObjectHideFlags: 0
@@ -8339,7 +8338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8955d2afa93e854a97f45f475cd23c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnRatio: 0
+  spawnRatio: 3
 --- !u!114 &1517859102
 MonoBehaviour:
   m_ObjectHideFlags: 0

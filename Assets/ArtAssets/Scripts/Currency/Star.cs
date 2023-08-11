@@ -7,6 +7,7 @@ public class Star: PooledObject, ICollectible {
     GameObject particle;
     public override void OnObjectSpawn()
     {
+        //to clear parent's code
     }
     public void OnCollected()
     {

@@ -21,14 +21,31 @@ public class UIManager : MonoBehaviour
     bool isFirstLevel = true;
     private void Awake()
     {
-        Color clr = fadeInOut.color;
-        clr.a = 1;
-        fadeInOut.color = clr;
-
-        fadeInOut.DOFade(0.0f, 1).OnComplete(() => { fadeInOut.raycastTarget = false; });
+        FadeOutScreen(); 
         uiPanel.SetActive(true);
         InitializeButtonClickSounds();
 
+    }
+    private void OnEnable()
+    {
+        EventsManager.onGameFinished += OnGameFinished;
+    }
+
+    private void OnDisable()
+    {
+        EventsManager.onGameFinished -= OnGameFinished;
+
+
+    }
+
+
+    private void FadeOutScreen()
+    {
+        Color clr = fadeInOut.color;
+        clr.a = 1;
+        fadeInOut.color = clr;
+        // turn on the alpha then fade out
+        fadeInOut.DOFade(0.0f, 1).OnComplete(() => { fadeInOut.raycastTarget = false; });
     }
 
     private void InitializeButtonClickSounds()
@@ -61,18 +78,7 @@ public class UIManager : MonoBehaviour
 
         DeactivateUI();
     }
-    private void OnEnable()
-    {
-        EventsManager.onGameFinished+= OnGameFinished;  
-    }
 
-    private void OnDisable()
-    {
-        EventsManager.onGameFinished -= OnGameFinished; 
-
-
-    }
-    
 
     private void OnGameFinished(bool isWin)
     {

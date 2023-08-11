@@ -14,12 +14,9 @@ public class DestroyByTime : MonoBehaviour
     private void OnDisable()
     {
         EventsManager.onGameStart -= DestroyGameObject;
-    }
-
+    } 
     private void DestroyGameObject()
     {
         Destroy(gameObject, timer);
-    }
-
-
+    } 
 }

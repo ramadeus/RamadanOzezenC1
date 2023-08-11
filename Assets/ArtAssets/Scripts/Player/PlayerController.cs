@@ -9,26 +9,26 @@ public class PlayerController: MonoBehaviour {
     [SerializeField] Animator anim;
     [SerializeField] float speed = 5;
     float currentFinishTargetZ;
-    float lastStandingStackX; 
-    bool canGoForward = false; 
+    float lastStandingStackX;
+    bool canGoForward = false;
     private void OnEnable()
     {
         EventsManager.onInitializeGame += OnInitializeTheGame;
-        EventsManager.onGameStart += OnGameStart; 
+        EventsManager.onGameStart += OnGameStart;
         EventsManager.onGameFinished += OnGameFinished;
 
         EventsManager.onFinishLineZChanged += OnFinishLineZChanged;
         EventsManager.onLastStandingXChanged += OnLastStandingXChanged;
-    } 
+    }
     private void OnDisable()
     {
         EventsManager.onInitializeGame -= OnInitializeTheGame;
         EventsManager.onGameStart -= OnGameStart;
-        EventsManager.onGameFinished -= OnGameFinished; 
+        EventsManager.onGameFinished -= OnGameFinished;
 
         EventsManager.onFinishLineZChanged -= OnFinishLineZChanged;
         EventsManager.onLastStandingXChanged -= OnLastStandingXChanged;
-    } 
+    }
     private void OnLastStandingXChanged(float x)
     {
         lastStandingStackX = x;
@@ -44,15 +44,14 @@ public class PlayerController: MonoBehaviour {
         anim.SetBool("dance", false);
         if(isFirstLevel)
         {
-        transform.DOMoveZ(0, 3f);
+            transform.DOMoveZ(0, 3f);
         }
-    } 
+    }
     private void OnGameStart()
-    {
-    
+    { 
         rb.isKinematic = false;
         canGoForward = true;
-    } 
+    }
     private void OnGameFinished(bool isWin)
     {
         if(isWin)
@@ -60,7 +59,6 @@ public class PlayerController: MonoBehaviour {
             anim.SetBool("dance", true);
         }
         canGoForward = false;
-        rb.isKinematic = true;
     }
     private void Update()
     {
