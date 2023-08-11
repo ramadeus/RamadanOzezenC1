@@ -6,7 +6,7 @@ public   class PooledObject : MonoBehaviour
 {
     //ı
     public int stackId;
-    public   void OnObjectSpawn()
+    public virtual  void OnObjectSpawn()
     {
         EventsManager.onObjectSpawn?.Invoke(stackId);
     }

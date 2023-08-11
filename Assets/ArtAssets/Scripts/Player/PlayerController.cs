@@ -41,6 +41,7 @@ public class PlayerController: MonoBehaviour {
 
     private void OnInitializeTheGame(bool isFirstLevel)
     {
+        anim.SetBool("dance", false);
         if(isFirstLevel)
         {
         transform.DOMoveZ(0, 3f);
@@ -48,7 +49,7 @@ public class PlayerController: MonoBehaviour {
     } 
     private void OnGameStart()
     {
-        anim.SetBool("dance", false);
+    
         rb.isKinematic = false;
         canGoForward = true;
     } 

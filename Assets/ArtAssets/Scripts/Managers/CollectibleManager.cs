@@ -50,16 +50,10 @@ public class CollectibleManager : MonoBehaviour
         {
             previousValue = PlayerPrefs.GetInt(key);
         }
+
        int totalValue = previousValue + value;
         PlayerPrefs.SetInt(key, totalValue);
     }
    
-    private int GetData (string key)
-    {
-        if(PlayerPrefs.HasKey(key))
-        {
-            return PlayerPrefs.GetInt(key);
-        }
-        return 0;
-    }
+   
 }
